@@ -6,17 +6,48 @@ using UnityEngine;
 public class VaccineRobot : MonoBehaviour
 {
     public GameObject bullet;
-    public GameObject powerBullet;
 
     [SerializeField]
-    private float speed = 2.25f;
+    [Range(2f, 10f)]
+    private float speed;
 
     private SpriteRenderer render;
     private Rigidbody2D rigid;
     private Animator anim;
 
-    private bool isInv = true;
     private float fireCool = 0;
+
+    bool isDamaged = false;
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (!isDamaged)
+        {
+            if (collision.gameObject.layer == 3)
+            {
+                GameManager.Instance.Hp -= collision.gameObject.GetComponent<Bullet>().power;
+                StartCoroutine(Blink());
+
+                isDamaged = true;
+                gameObject.layer = 3;
+            }
+        }
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if(!isDamaged)
+        {
+            if(collision.gameObject.layer == 3)
+            {
+                GameManager.Instance.Hp -= collision.gameObject.GetComponent<Virus>().power / 2;
+                StartCoroutine(Blink());
+
+                isDamaged = true;
+                gameObject.layer = 3;
+            }
+        }
+    }
 
     void Move()
     {
@@ -48,6 +79,27 @@ public class VaccineRobot : MonoBehaviour
         }
     }
 
+    IEnumerator Blink()
+    {
+        int count = 0;
+        while(count < 10)
+        {
+            if(count % 2 == 0)
+            {
+                render.color = new Color(1, 1, 1, 0.5f);
+            }
+            else
+            {
+                render.color = new Color(1, 1, 1, 1);
+            }
+            yield return new WaitForSeconds(0.15f);
+
+            count++;
+        }
+        isDamaged = false;
+        gameObject.layer = 0;
+    }
+
     void Fire(int bpm)
     {
         fireCool -= Time.deltaTime;
@@ -55,29 +107,10 @@ public class VaccineRobot : MonoBehaviour
         {
             if (fireCool <= 0)
             {
-                var blt = Instantiate(bullet);
-                blt.transform.position = new Vector3(transform.position.x, transform.position.y + 0.7f, 0);
+                Instantiate(bullet, new Vector2(transform.position.x, transform.position.y + 1f), Quaternion.identity);
                 fireCool = 60.0f / bpm;
             }
         }
-    }
-
-    IEnumerator Blink()
-    {
-        isInv = true;
-        for(int i = 0; i < 5; ++i)
-        {
-            yield return new WaitForSeconds(0.1f);
-            render.color = new Color(1, 1, 1, 0.5f);
-            yield return new WaitForSeconds(0.1f);
-            render.color = Color.white;
-        }
-        isInv = false;
-    }
-
-    void ActivateInv()
-    {
-        StartCoroutine(Blink());
     }
 
     // Start is called before the first frame update
@@ -86,16 +119,14 @@ public class VaccineRobot : MonoBehaviour
         render = GetComponent<SpriteRenderer>();
         rigid = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
+
+        GameManager.Instance.Pain = GameManager.Instance.Stage == 1 ? 10 : 30;
     }
 
     // Update is called once per frame
     void Update()
     {
+        Fire(550);
         Move();
-        Fire(300);
-        //if(Input.GetKeyDown(KeyCode.Space))
-        //{
-        //    ActivateInv();
-        //}
     }
 }

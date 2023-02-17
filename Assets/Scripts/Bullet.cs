@@ -5,28 +5,35 @@ using UnityEngine;
 public class Bullet : MonoBehaviour
 {
     [SerializeField]
-    private float bulletSpeed = 8;
+    [Range(1f, 10f)]
+    private float speed = 5f;
+    public int power;
+    private Rigidbody2D rigid;
 
-    Rigidbody2D rigid;
+    private bool isEnemy;
+    public bool IsEnemy
+    {
+        get
+        {
+            return isEnemy;
+        }
+        set
+        { 
+            isEnemy = value;
+        }
+    }
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if(collision.tag == "Wall")
-        {
+        if (collision.gameObject.tag != "Bullet")
             Destroy(this.gameObject);
-        }
     }
 
     // Start is called before the first frame update
     void Start()
     {
         rigid = GetComponent<Rigidbody2D>();
-        rigid.velocity = Vector2.up * bulletSpeed;
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
+        if(isEnemy) rigid.velocity = Vector2.down * speed;
+        else rigid.velocity = Vector2.up * speed;
     }
 }
